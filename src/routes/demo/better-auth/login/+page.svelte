@@ -6,7 +6,7 @@
 </script>
 
 <h1>Login</h1>
-<form method="post" action="?/signInEmail" use:enhance>
+<form method="post" action="?/sign_in_email" use:enhance>
 	<label>
 		Email
 		<input type="email" name="email" />
@@ -20,6 +20,6 @@
 		<input name="name" />
 	</label>
 	<button>Login</button>
-	<button formaction="?/signUpEmail">Register</button>
+	<button formaction="?/sign_up_email">Register</button>
 </form>
 <p style="color: red">{form?.message ?? ''}</p>

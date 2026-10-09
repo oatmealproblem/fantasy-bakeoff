@@ -12,7 +12,7 @@ export const load: PageServerLoad = (event) => {
 };
 
 export const actions: Actions = {
-	signInEmail: async (event) => {
+	sign_in_email: async (event) => {
 		const formData = await event.request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
@@ -34,7 +34,7 @@ export const actions: Actions = {
 
 		return redirect(302, '/demo/better-auth');
 	},
-	signUpEmail: async (event) => {
+	sign_up_email: async (event) => {
 		const formData = await event.request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';

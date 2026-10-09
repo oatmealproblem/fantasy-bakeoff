@@ -11,7 +11,7 @@ export const load: PageServerLoad = (event) => {
 };
 
 export const actions: Actions = {
-	signOut: async (event) => {
+	sign_out: async (event) => {
 		await auth.api.signOut({
 			headers: event.request.headers
 		});
