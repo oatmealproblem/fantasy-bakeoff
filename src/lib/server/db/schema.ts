@@ -1,4 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import {
 	index,
 	integer,
@@ -12,7 +13,7 @@ import { user } from './auth.schema';
 const id = () =>
 	text('id')
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID());
+		.$defaultFn(() => nanoid());
 
 const created_at = () =>
 	integer('created_at', { mode: 'timestamp_ms' })
