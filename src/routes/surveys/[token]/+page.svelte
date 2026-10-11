@@ -7,6 +7,13 @@
 	const survey = $derived(await get_survey(params.token));
 </script>
 
+{#snippet contestant(c: (typeof survey.contestants)[number])}
+	{#if c.picture_url}
+		<img src={c.picture_url} alt={c.name} width="48" height="48" />
+	{/if}
+	{c.name}
+{/snippet}
+
 <main>
 	<h1>{survey.round.name}</h1>
 	<p>{survey.player_name}'s responses</p>
@@ -41,7 +48,7 @@
 								survey.answers.star_baker === c.id
 							)}
 						/>
-						{c.name}
+						{@render contestant(c)}
 					</label>
 				{/each}
 			</fieldset>
@@ -71,7 +78,7 @@
 									)}
 								/>
 							{/if}
-							{c.name}
+							{@render contestant(c)}
 						</label>
 					{/each}
 				</fieldset>
@@ -89,7 +96,7 @@
 							survey.answers.technical_challenge_first === c.id
 						)}
 					/>
-					{c.name}
+					{@render contestant(c)}
 				</label>
 			{/each}
 		</fieldset>
@@ -102,7 +109,7 @@
 						<input
 							{...save_survey.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}
 						/>
-						{c.name}
+						{@render contestant(c)}
 					</label>
 				{/each}
 			</fieldset>
@@ -118,7 +125,7 @@
 								survey.answers.finalists.includes(c.id)
 							)}
 						/>
-						{c.name}
+						{@render contestant(c)}
 					</label>
 				{/each}
 			</fieldset>
@@ -136,7 +143,7 @@
 								survey.answers.bonus_question_answers.includes(c.id)
 							)}
 						/>
-						{c.name}
+						{@render contestant(c)}
 					</label>
 				{/each}
 			</fieldset>

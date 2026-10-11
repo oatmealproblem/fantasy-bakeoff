@@ -477,7 +477,8 @@ export const get_survey = query(z.string(), (token) => {
 		},
 		contestants: eligible_contestants(game_row.id, round_row.number).map((c) => ({
 			id: c.id,
-			name: c.name
+			name: c.name,
+			picture_url: c.picture_url
 		})),
 		answers: survey_answers(row.id),
 		deadline_passed: closed,

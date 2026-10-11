@@ -47,11 +47,18 @@
 	);
 </script>
 
+{#snippet name(c: (typeof data.contestants)[number])}
+	{#if c.picture_url}
+		<img src={c.picture_url} alt={c.name} width="48" height="48" />
+	{/if}
+	{c.name}
+{/snippet}
+
 {#snippet radios(field: RemoteFormField<string>, selected: string | undefined)}
 	{#each data.contestants as c (c.id)}
 		<label>
 			<input {...field.as('radio', c.id, selected === c.id)} />
-			{c.name}
+			{@render name(c)}
 		</label>
 	{/each}
 {/snippet}
@@ -60,7 +67,7 @@
 	{#each data.contestants as c (c.id)}
 		<label>
 			<input {...field.as('checkbox', c.id, selected.includes(c.id))} />
-			{c.name}
+			{@render name(c)}
 		</label>
 	{/each}
 {/snippet}
