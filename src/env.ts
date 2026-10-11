@@ -10,13 +10,11 @@ export const variables = defineEnvVars({
 		description:
 			'Secret used to sign tokens. For production use 32 characters generated with high entropy. See [Better Auth installation](https://www.better-auth.com/docs/installation).'
 	},
-	TWILIO_ID: {
+	SENDGRID_API_KEY: {
+		description: 'SendGrid API key with mail.send permission.',
 		schema: z.string().optional()
 	},
-	TWILIO_SECRET: {
-		schema: z.string().optional()
-	},
-	TWILIO_EMAIL_FROM: {
+	EMAIL_FROM: {
 		description: 'Verified sender address for email notifications, e.g. `bakeoff@example.com`.',
 		schema: z.email().optional()
 	}
