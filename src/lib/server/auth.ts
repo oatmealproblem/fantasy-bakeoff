@@ -14,6 +14,9 @@ export const auth = betterAuth({
 			emailVerified: 'email_verified',
 			createdAt: 'created_at',
 			updatedAt: 'updated_at'
+		},
+		additionalFields: {
+			can_send_email: { type: 'boolean', defaultValue: false, input: false }
 		}
 	},
 	session: {

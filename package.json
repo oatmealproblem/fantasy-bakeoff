@@ -18,7 +18,8 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
-		"auth:schema": "auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
+		"auth:schema": "auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
+		"enable-email": "node --env-file-if-exists=.env scripts/enable-email.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

@@ -13,7 +13,8 @@ export const user = sqliteTable('user', {
 	updated_at: integer('updated_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.$onUpdate(() => /* @__PURE__ */ new Date())
-		.notNull()
+		.notNull(),
+	can_send_email: integer('can_send_email', { mode: 'boolean' }).default(false).notNull()
 });
 
 export const session = sqliteTable(

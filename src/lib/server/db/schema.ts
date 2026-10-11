@@ -56,7 +56,6 @@ export const player = sqliteTable(
 			.notNull()
 			.references(() => game.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
-		phone: text('phone'),
 		email: text('email')
 	},
 	(t) => [index('player_game_id_idx').on(t.game_id)]

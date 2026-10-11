@@ -50,7 +50,6 @@
 	<form {...add_player}>
 		<input {...add_player.fields.game_id.as('hidden', game.id)} />
 		<input {...add_player.fields.name.as('text')} placeholder="Name" required />
-		<input {...add_player.fields.phone.as('tel')} placeholder="Phone" />
 		<input {...add_player.fields.email.as('email')} placeholder="Email" />
 		<button>Add player</button>
 	</form>
@@ -63,7 +62,6 @@
 				<form {...update}>
 					<input {...update.fields.id.as('hidden', player.id)} />
 					<input {...update.fields.name.as('text', player.name)} required />
-					<input {...update.fields.phone.as('tel', player.phone ?? '')} placeholder="Phone" />
 					<input {...update.fields.email.as('email', player.email ?? '')} placeholder="Email" />
 					<button>Save</button>
 				</form>
@@ -224,6 +222,9 @@
 					<button>Release surveys</button>
 					{#if release.result}
 						<p>Released {release.result.released} new survey(s).</p>
+						{#if release.result.released > 0 && !release.result.emailed}
+							<p>Emails were not sent to players — your account is not enabled to send email.</p>
+						{/if}
 					{/if}
 				</form>
 				{#if round.surveys.length > 0}

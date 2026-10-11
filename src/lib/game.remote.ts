@@ -3,6 +3,8 @@ import { form, getRequestEvent, query } from '$app/server';
 import { and, asc, desc, eq, inArray, max } from 'drizzle-orm';
 import { z } from 'zod';
 import { parse_bakers } from '#lib/server/bakers.ts';
+import { html } from '#lib/server/html.ts';
+import { send_email, results_url, survey_url } from '#lib/server/notify.ts';
 import { db } from '#lib/server/db/index.ts';
 import {
 	contestant,
@@ -11,7 +13,8 @@ import {
 	response,
 	response_contestant,
 	round,
-	round_contestant
+	round_contestant,
+	user
 } from '#lib/server/db/schema.ts';
 import { round_answers, score_breakdown, score_game, type RoundRole } from '#lib/scoring.ts';
 import {
@@ -57,6 +60,17 @@ function require_round(id: string) {
 	if (!row) error(404, 'Round not found');
 	require_game(row.game_id);
 	return row;
+}
+
+function can_send_email(game_id: string) {
+	return (
+		db
+			.select({ can_send_email: user.can_send_email })
+			.from(game)
+			.innerJoin(user, eq(user.id, game.created_by_id))
+			.where(eq(game.id, game_id))
+			.get()?.can_send_email ?? false
+	);
 }
 
 function eligible_contestants(game_id: string, round_number: number) {
@@ -189,10 +203,6 @@ export const delete_game = form(z.object({ id: z.string() }), ({ id }) => {
 
 const player_fields = {
 	name: z.string().trim().min(1, 'Enter a name'),
-	phone: z
-		.string()
-		.trim()
-		.transform((v) => v || null),
 	email: z
 		.string()
 		.trim()
@@ -348,11 +358,11 @@ export const delete_round = form(z.object({ id: z.string() }), ({ id }) => {
 	db.delete(round).where(eq(round.id, id)).run();
 });
 
-export const release_surveys = form(z.object({ round_id: z.string() }), ({ round_id }) => {
+export const release_surveys = form(z.object({ round_id: z.string() }), async ({ round_id }) => {
 	const row = require_round(round_id);
 
 	const players = db
-		.select({ id: player.id })
+		.select({ id: player.id, name: player.name, email: player.email })
 		.from(player)
 		.where(eq(player.game_id, row.game_id))
 		.all();
@@ -370,9 +380,34 @@ export const release_surveys = form(z.object({ round_id: z.string() }), ({ round
 		.filter((p) => !existing.has(p.id))
 		.map((p) => ({ round_id, player_id: p.id }));
 
-	if (rows.length > 0) db.insert(response).values(rows).run();
+	const created = rows.length
+		? db
+				.insert(response)
+				.values(rows)
+				.returning({ id: response.id, player_id: response.player_id })
+				.all()
+		: [];
 
-	return { released: rows.length };
+	const emailed = can_send_email(row.game_id);
+
+	if (emailed) {
+		await Promise.all(
+			created.map((r) => {
+				const p = players.find((x) => x.id === r.player_id)!;
+				if (!p.email) return;
+				const url = survey_url(r.id);
+				const message = `${p.name}, your survey for ${row.name} is now available.`;
+				return send_email(
+					p.email,
+					`Fantasy Bake Off: ${row.name} survey is available`,
+					`${message} Here's your personal survey link: ${url}`,
+					html`<p>${message} <a href="${url}">Here's your personal survey link.</a></p>`
+				);
+			})
+		);
+	}
+
+	return { released: rows.length, emailed };
 });
 
 function find_survey(token: string) {
@@ -701,7 +736,7 @@ const answer_fields = z.object({
 	finalist: z.array(z.string()).default([])
 });
 
-export const save_round_answers = form(answer_fields, (data) => {
+export const save_round_answers = form(answer_fields, async (data) => {
 	const round_row = require_round(data.round_id);
 
 	const valid_ids = new Set(
@@ -714,12 +749,41 @@ export const save_round_answers = form(answer_fields, (data) => {
 		if (!valid_ids.has(row.contestant_id)) invalid('Invalid contestant selection');
 	}
 
+	const first_score = rows.length > 0 && !round_scored(round_row.id);
+
 	db.transaction((tx) => {
 		tx.delete(round_contestant).where(eq(round_contestant.round_id, round_row.id)).run();
 		if (rows.length > 0) {
 			tx.insert(round_contestant).values(rows).run();
 		}
 	});
+
+	if (first_score && can_send_email(round_row.game_id)) {
+		const recipients = db
+			.select({
+				token: response.id,
+				name: player.name,
+				email: player.email
+			})
+			.from(response)
+			.innerJoin(player, eq(player.id, response.player_id))
+			.where(eq(response.round_id, round_row.id))
+			.all();
+
+		await Promise.all(
+			recipients.map((r) => {
+				if (!r.email) return;
+				const url = results_url(r.token);
+				const message = `${r.name}, ${round_row.name} has been scored.`;
+				return send_email(
+					r.email,
+					`Fantasy Bake Off: ${round_row.name} has been scored`,
+					`${message} See the results here: ${url}`,
+					html`<p>${message} <a href="${url}">See the results here.</a></p>`
+				);
+			})
+		);
+	}
 
 	return { saved: true };
 });
