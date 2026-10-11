@@ -70,7 +70,13 @@ export const round = sqliteTable(
 			.references(() => game.id, { onDelete: 'cascade' }),
 		number: integer('number').notNull(),
 		name: text('name').notNull(),
-		bonus_question: text('bonus_question')
+		bonus_question: text('bonus_question'),
+		allow_finale_prediction: integer('allow_finale_prediction', { mode: 'boolean' })
+			.notNull()
+			.default(false),
+		is_finale: integer('is_finale', { mode: 'boolean' }).notNull().default(false),
+		expected_number_sent_home: integer('expected_number_sent_home'),
+		response_deadline: integer('response_deadline', { mode: 'timestamp_ms' })
 	},
 	(t) => [index('round_game_id_idx').on(t.game_id)]
 );
@@ -94,7 +100,9 @@ export const round_contestant = sqliteTable(
 				'technical_challenge_last',
 				'sent_home',
 				'sent_home_discussed',
-				'bonus_question_answer'
+				'bonus_question_answer',
+				'winner',
+				'finalist'
 			]
 		}).notNull()
 	},
@@ -131,7 +139,14 @@ export const response_contestant = sqliteTable(
 			.notNull()
 			.references(() => contestant.id, { onDelete: 'cascade' }),
 		role: text('role', {
-			enum: ['star_baker', 'sent_home', 'technical_challenge_first', 'bonus_question_answer']
+			enum: [
+				'star_baker',
+				'sent_home',
+				'technical_challenge_first',
+				'bonus_question_answer',
+				'winner',
+				'finalist'
+			]
 		}).notNull()
 	},
 	(t) => [

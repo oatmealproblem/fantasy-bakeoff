@@ -2,20 +2,26 @@
 	import {
 		add_contestant,
 		add_player,
+		add_round,
 		delete_contestant,
 		delete_game,
 		delete_player,
+		delete_round,
 		get_game,
 		import_contestants,
+		release_surveys,
 		update_contestant,
 		update_game,
-		update_player
+		update_player,
+		update_round
 	} from '#lib/game.remote.ts';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
 	const game = $derived(await get_game(params.id));
+
+	const utc_input = (date: Date) => date.toISOString().slice(0, 16);
 </script>
 
 <main>
@@ -121,6 +127,121 @@
 						}}>Delete</button
 					>
 				</form>
+			</li>
+		{/each}
+	</ul>
+
+	<h2>Rounds</h2>
+	<form {...add_round}>
+		<input {...add_round.fields.game_id.as('hidden', game.id)} />
+		<input {...add_round.fields.name.as('text')} placeholder="Round name" required />
+		<label>
+			Bonus question
+			<input {...add_round.fields.bonus_question.as('text')} />
+		</label>
+		<label>
+			<input {...add_round.fields.allow_finale_prediction.as('checkbox')} />
+			Allow finale prediction
+		</label>
+		<label>
+			<input {...add_round.fields.is_finale.as('checkbox')} />
+			Finale
+		</label>
+		<label>
+			Bakers sent home
+			<input {...add_round.fields.expected_number_sent_home.as('number', 1)} min="1" />
+		</label>
+		<label>
+			Response deadline (UTC)
+			<input {...add_round.fields.response_deadline.as('datetime-local')} />
+		</label>
+		<button>Add round</button>
+		{#each add_round.fields.allIssues() ?? [] as issue (issue.message)}
+			<p class="issue">{issue.message}</p>
+		{/each}
+	</form>
+
+	<ul>
+		{#each game.rounds as round (round.id)}
+			{const update = update_round.for(round.id)}
+			{const del = delete_round.for(round.id)}
+			{const release = release_surveys.for(round.id)}
+			{const complete = round.surveys.filter((s) => s.status === 'yes').length}
+			<li>
+				<h3>#{round.number} {round.name}</h3>
+				<p><a href="/games/{game.id}/scoring/{round.id}">Enter answers & scores</a></p>
+				<form {...update}>
+					<input {...update.fields.id.as('hidden', round.id)} />
+					<input {...update.fields.name.as('text', round.name)} required />
+					<label>
+						Bonus question
+						<input {...update.fields.bonus_question.as('text', round.bonus_question ?? '')} />
+					</label>
+					<label>
+						<input
+							{...update.fields.allow_finale_prediction.as(
+								'checkbox',
+								round.allow_finale_prediction
+							)}
+						/>
+						Allow finale prediction
+					</label>
+					<label>
+						<input {...update.fields.is_finale.as('checkbox', round.is_finale)} />
+						Finale
+					</label>
+					<label>
+						Bakers sent home
+						<input
+							{...update.fields.expected_number_sent_home.as(
+								'number',
+								round.expected_number_sent_home ?? 1
+							)}
+							min="1"
+						/>
+					</label>
+					<label>
+						Response deadline (UTC)
+						<input
+							{...update.fields.response_deadline.as(
+								'datetime-local',
+								round.response_deadline ? utc_input(round.response_deadline) : ''
+							)}
+						/>
+					</label>
+					<button>Save</button>
+				</form>
+				<form {...del}>
+					<input {...del.fields.id.as('hidden', round.id)} />
+					<button
+						onclick={(e) => {
+							if (!confirm(`Delete round ${round.name}?`)) e.preventDefault();
+						}}>Delete</button
+					>
+				</form>
+				<form {...release}>
+					<input {...release.fields.round_id.as('hidden', round.id)} />
+					<button>Release surveys</button>
+					{#if release.result}
+						<p>Released {release.result.released} new survey(s).</p>
+					{/if}
+				</form>
+				{#if round.surveys.length > 0}
+					<details>
+						<summary>Survey links ({complete}/{round.surveys.length} complete)</summary>
+						<ul>
+							{#each round.surveys as s (s.player_id)}
+								<li>
+									{#if s.token}
+										<a href="/surveys/{s.token}">{s.player_name}</a> — {s.status}
+									{:else}
+										{s.player_name} — not released
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					</details>
+				{/if}
 			</li>
 		{/each}
 	</ul>
