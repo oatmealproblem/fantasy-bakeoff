@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { parse_bakers } from '#lib/server/bakers.ts';
 import { html } from '#lib/server/html.ts';
 import { send_email, results_url, survey_url } from '#lib/server/notify.ts';
+import { format_in_timezone, parse_in_timezone } from '#lib/server/time.ts';
 import { db } from '#lib/server/db/index.ts';
 import {
 	contestant,
@@ -293,6 +294,8 @@ export const import_contestants = form(
 	}
 );
 
+const timezone_field = z.string().default('UTC');
+
 const round_fields = {
 	name: z.string().trim().min(1, 'Enter a round name'),
 	bonus_question: z
@@ -302,11 +305,8 @@ const round_fields = {
 	allow_finale_prediction: z.boolean().default(false),
 	is_finale: z.boolean().default(false),
 	expected_number_sent_home: z.number().int().min(1).default(1),
-	response_deadline: z
-		.string()
-		.trim()
-		.transform((v) => (v ? new Date(`${v}Z`) : null))
-		.refine((v) => v === null || !Number.isNaN(v.getTime()), 'Enter a valid deadline')
+	response_deadline: z.string().trim(),
+	timezone: timezone_field
 };
 
 function round_values(fields: {
@@ -315,15 +315,21 @@ function round_values(fields: {
 	allow_finale_prediction: boolean;
 	is_finale: boolean;
 	expected_number_sent_home: number;
-	response_deadline: Date | null;
+	response_deadline: string;
+	timezone: string;
 }) {
+	const deadline = fields.response_deadline
+		? parse_in_timezone(fields.response_deadline, fields.timezone)
+		: null;
+	if (deadline && Number.isNaN(deadline.getTime())) invalid('Enter a valid deadline');
+
 	return {
 		name: fields.name,
 		bonus_question: fields.bonus_question,
 		allow_finale_prediction: fields.allow_finale_prediction,
 		is_finale: fields.is_finale,
 		expected_number_sent_home: fields.is_finale ? null : fields.expected_number_sent_home,
-		response_deadline: fields.response_deadline
+		response_deadline: deadline
 	};
 }
 
@@ -358,57 +364,64 @@ export const delete_round = form(z.object({ id: z.string() }), ({ id }) => {
 	db.delete(round).where(eq(round.id, id)).run();
 });
 
-export const release_surveys = form(z.object({ round_id: z.string() }), async ({ round_id }) => {
-	const row = require_round(round_id);
+export const release_surveys = form(
+	z.object({ round_id: z.string(), timezone: timezone_field }),
+	async ({ round_id, timezone }) => {
+		const row = require_round(round_id);
 
-	const players = db
-		.select({ id: player.id, name: player.name, email: player.email })
-		.from(player)
-		.where(eq(player.game_id, row.game_id))
-		.all();
+		const players = db
+			.select({ id: player.id, name: player.name, email: player.email })
+			.from(player)
+			.where(eq(player.game_id, row.game_id))
+			.all();
 
-	const existing = new Set(
-		db
-			.select({ player_id: response.player_id })
-			.from(response)
-			.where(eq(response.round_id, round_id))
-			.all()
-			.map((r) => r.player_id)
-	);
-
-	const rows = players
-		.filter((p) => !existing.has(p.id))
-		.map((p) => ({ round_id, player_id: p.id }));
-
-	const created = rows.length
-		? db
-				.insert(response)
-				.values(rows)
-				.returning({ id: response.id, player_id: response.player_id })
+		const existing = new Set(
+			db
+				.select({ player_id: response.player_id })
+				.from(response)
+				.where(eq(response.round_id, round_id))
 				.all()
-		: [];
-
-	const emailed = can_send_email(row.game_id);
-
-	if (emailed) {
-		await Promise.all(
-			created.map((r) => {
-				const p = players.find((x) => x.id === r.player_id)!;
-				if (!p.email) return;
-				const url = survey_url(r.id);
-				const message = `${p.name}, your survey for ${row.name} is now available.`;
-				return send_email(
-					p.email,
-					`Fantasy Bake Off: ${row.name} survey is available`,
-					`${message} Here's your personal survey link: ${url}`,
-					html`<p>${message} <a href="${url}">Here's your personal survey link.</a></p>`
-				);
-			})
+				.map((r) => r.player_id)
 		);
-	}
 
-	return { released: rows.length, emailed };
-});
+		const rows = players
+			.filter((p) => !existing.has(p.id))
+			.map((p) => ({ round_id, player_id: p.id }));
+
+		const created = rows.length
+			? db
+					.insert(response)
+					.values(rows)
+					.returning({ id: response.id, player_id: response.player_id })
+					.all()
+			: [];
+
+		const emailed = can_send_email(row.game_id);
+
+		if (emailed) {
+			const deadline = row.response_deadline
+				? ` The deadline is ${format_in_timezone(row.response_deadline, timezone)}.`
+				: '';
+
+			await Promise.all(
+				created.map((r) => {
+					const p = players.find((x) => x.id === r.player_id)!;
+					if (!p.email) return;
+					const url = survey_url(r.id);
+					const message = `${p.name}, your survey for ${row.name} is now available.${deadline}`;
+					return send_email(
+						p.email,
+						`Fantasy Bake Off: ${row.name} survey is available`,
+						`${message} Here's your personal survey link: ${url}`,
+						html`<p>${message} <a href="${url}">Here's your personal survey link.</a></p>`
+					);
+				})
+			);
+		}
+
+		return { released: rows.length, emailed };
+	}
+);
 
 function find_survey(token: string) {
 	const row = db

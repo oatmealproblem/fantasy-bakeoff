@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import {
 		add_contestant,
 		add_player,
@@ -21,7 +22,13 @@
 
 	const game = $derived(await get_game(params.id));
 
-	const utc_input = (date: Date) => date.toISOString().slice(0, 16);
+	let timezone = $state('');
+	onMount(() => {
+		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	});
+
+	const local_input = (date: Date) =>
+		new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 </script>
 
 <main>
@@ -132,6 +139,7 @@
 	<h2>Rounds</h2>
 	<form {...add_round}>
 		<input {...add_round.fields.game_id.as('hidden', game.id)} />
+		<input {...add_round.fields.timezone.as('hidden', timezone)} />
 		<input {...add_round.fields.name.as('text')} placeholder="Round name" required />
 		<label>
 			Bonus question
@@ -150,7 +158,7 @@
 			<input {...add_round.fields.expected_number_sent_home.as('number', 1)} min="1" />
 		</label>
 		<label>
-			Response deadline (UTC)
+			Response deadline
 			<input {...add_round.fields.response_deadline.as('datetime-local')} />
 		</label>
 		<button>Add round</button>
@@ -170,6 +178,7 @@
 				<p><a href="/games/{game.id}/scoring/{round.id}">Enter answers & scores</a></p>
 				<form {...update}>
 					<input {...update.fields.id.as('hidden', round.id)} />
+					<input {...update.fields.timezone.as('hidden', timezone)} />
 					<input {...update.fields.name.as('text', round.name)} required />
 					<label>
 						Bonus question
@@ -199,11 +208,11 @@
 						/>
 					</label>
 					<label>
-						Response deadline (UTC)
+						Response deadline
 						<input
 							{...update.fields.response_deadline.as(
 								'datetime-local',
-								round.response_deadline ? utc_input(round.response_deadline) : ''
+								round.response_deadline ? local_input(round.response_deadline) : ''
 							)}
 						/>
 					</label>
@@ -219,6 +228,7 @@
 				</form>
 				<form {...release}>
 					<input {...release.fields.round_id.as('hidden', round.id)} />
+					<input {...release.fields.timezone.as('hidden', timezone)} />
 					<button>Release surveys</button>
 					{#if release.result}
 						<p>Released {release.result.released} new survey(s).</p>
