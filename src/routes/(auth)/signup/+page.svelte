@@ -2,7 +2,7 @@
 	import { sign_up } from '#lib/auth.remote.ts';
 </script>
 
-<main>
+<main class="narrow">
 	<h1>Sign up</h1>
 
 	{#each (sign_up.fields.allIssues() ?? []).filter((issue) => issue.path.length === 0) as issue, i (i)}

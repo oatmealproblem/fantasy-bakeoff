@@ -56,8 +56,14 @@
 	<h2>Players</h2>
 	<form {...add_player}>
 		<input {...add_player.fields.game_id.as('hidden', game.id)} />
-		<input {...add_player.fields.name.as('text')} placeholder="Name" required />
-		<input {...add_player.fields.email.as('email')} placeholder="Email" />
+		<label>
+			Name
+			<input {...add_player.fields.name.as('text')} required />
+		</label>
+		<label>
+			Email
+			<input {...add_player.fields.email.as('email')} />
+		</label>
 		<button>Add player</button>
 	</form>
 
@@ -66,12 +72,18 @@
 			{const update = update_player.for(player.id)}
 			{const del = delete_player.for(player.id)}
 			<li>
-				<form {...update}>
+				<form id="update-player-{player.id}" {...update}>
 					<input {...update.fields.id.as('hidden', player.id)} />
-					<input {...update.fields.name.as('text', player.name)} required />
-					<input {...update.fields.email.as('email', player.email ?? '')} placeholder="Email" />
-					<button>Save</button>
+					<label>
+						Name
+						<input {...update.fields.name.as('text', player.name)} required />
+					</label>
+					<label>
+						Email
+						<input {...update.fields.email.as('email', player.email ?? '')} />
+					</label>
 				</form>
+				<button form="update-player-{player.id}">Save</button>
 				<form {...del}>
 					<input {...del.fields.id.as('hidden', player.id)} />
 					<button
@@ -102,8 +114,14 @@
 
 	<form {...add_contestant}>
 		<input {...add_contestant.fields.game_id.as('hidden', game.id)} />
-		<input {...add_contestant.fields.name.as('text')} placeholder="Name" required />
-		<input {...add_contestant.fields.picture_url.as('url')} placeholder="Picture URL" />
+		<label>
+			Name
+			<input {...add_contestant.fields.name.as('text')} required />
+		</label>
+		<label>
+			Picture URL
+			<input {...add_contestant.fields.picture_url.as('url')} />
+		</label>
 		<button>Add contestant</button>
 	</form>
 
@@ -115,15 +133,18 @@
 				{#if c.picture_url}
 					<img src={c.picture_url} alt={c.name} width="48" height="48" />
 				{/if}
-				<form {...update}>
+				<form id="update-contestant-{c.id}" {...update}>
 					<input {...update.fields.id.as('hidden', c.id)} />
-					<input {...update.fields.name.as('text', c.name)} required />
-					<input
-						{...update.fields.picture_url.as('url', c.picture_url)}
-						placeholder="Picture URL"
-					/>
-					<button>Save</button>
+					<label>
+						Name
+						<input {...update.fields.name.as('text', c.name)} required />
+					</label>
+					<label>
+						Picture URL
+						<input {...update.fields.picture_url.as('url', c.picture_url)} />
+					</label>
 				</form>
+				<button form="update-contestant-{c.id}">Save</button>
 				<form {...del}>
 					<input {...del.fields.id.as('hidden', c.id)} />
 					<button
@@ -140,7 +161,10 @@
 	<form {...add_round}>
 		<input {...add_round.fields.game_id.as('hidden', game.id)} />
 		<input {...add_round.fields.timezone.as('hidden', timezone)} />
-		<input {...add_round.fields.name.as('text')} placeholder="Round name" required />
+		<label>
+			Round name
+			<input {...add_round.fields.name.as('text')} required />
+		</label>
 		<label>
 			Bonus question
 			<input {...add_round.fields.bonus_question.as('text')} />
@@ -154,14 +178,14 @@
 			Finale
 		</label>
 		<label>
-			Bakers sent home
+			Expected number of bakers sent home
 			<input {...add_round.fields.expected_number_sent_home.as('number', 1)} min="1" />
 		</label>
 		<label>
 			Response deadline
 			<input {...add_round.fields.response_deadline.as('datetime-local')} />
 		</label>
-		<button>Add round</button>
+		<button class="primary">Add round</button>
 		{#each add_round.fields.allIssues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
@@ -176,10 +200,13 @@
 			<li>
 				<h3>#{round.number} {round.name}</h3>
 				<p><a href="/games/{game.id}/scoring/{round.id}">Enter answers & scores</a></p>
-				<form {...update}>
+				<form id="update-round-{round.id}" {...update}>
 					<input {...update.fields.id.as('hidden', round.id)} />
 					<input {...update.fields.timezone.as('hidden', timezone)} />
-					<input {...update.fields.name.as('text', round.name)} required />
+					<label>
+						Round name
+						<input {...update.fields.name.as('text', round.name)} required />
+					</label>
 					<label>
 						Bonus question
 						<input {...update.fields.bonus_question.as('text', round.bonus_question ?? '')} />
@@ -198,7 +225,7 @@
 						Finale
 					</label>
 					<label>
-						Bakers sent home
+						Expected # sent home
 						<input
 							{...update.fields.expected_number_sent_home.as(
 								'number',
@@ -216,8 +243,8 @@
 							)}
 						/>
 					</label>
-					<button>Save</button>
 				</form>
+				<button form="update-round-{round.id}">Save</button>
 				<form {...del}>
 					<input {...del.fields.id.as('hidden', round.id)} />
 					<button

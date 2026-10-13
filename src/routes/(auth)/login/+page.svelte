@@ -2,8 +2,8 @@
 	import { sign_in } from '#lib/auth.remote.ts';
 </script>
 
-<main>
-	<h1>Log in</h1>
+<main class="narrow">
+	<h1>Fantasy Bake Off</h1>
 
 	{#each (sign_in.fields.allIssues() ?? []).filter((issue) => issue.path.length === 0) as issue, i (i)}
 		<p>{issue.message}</p>

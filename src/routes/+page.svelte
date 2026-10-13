@@ -7,7 +7,7 @@
 
 <main>
 	{#if user}
-		<h1>Fantasy Bakeoff</h1>
+		<h1>Fantasy Bake Off</h1>
 		<p>Signed in as {user.name}.</p>
 		<form {...sign_out}>
 			<button>Sign out</button>
@@ -28,7 +28,7 @@
 			{/each}
 		</form>
 	{:else}
-		<h1>Fantasy Bakeoff</h1>
+		<h1>Fantasy Bake Off</h1>
 		<p><a href="/login">Log in</a> or <a href="/signup">Sign up</a>.</p>
 	{/if}
 </main>
