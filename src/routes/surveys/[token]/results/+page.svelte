@@ -63,7 +63,7 @@
 	<SectionHeading>Your score</SectionHeading>
 	{#if results.scored && results.breakdown}
 		<Table
-			caption={`#${results.round.number} ${results.round.name} — ${results.breakdown.total} points`}
+			caption={`${results.round.name} — ${results.breakdown.total} points`}
 			columns={['Reason', 'Points']}
 			rows={breakdown_rows}
 		/>

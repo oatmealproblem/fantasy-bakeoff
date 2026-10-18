@@ -89,7 +89,7 @@
 		</Fieldset>
 
 		{#if survey.round.allow_finale_prediction}
-			<Fieldset legend="Winner" disabled={!survey.can_edit}>
+			<Fieldset legend="Season Winner" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption
 						{...form.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}

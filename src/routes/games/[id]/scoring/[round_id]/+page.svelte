@@ -88,7 +88,7 @@
 
 <Page wide fill>
 	<p><a href="/games/{params.id}">← Back to game</a></p>
-	<PageTitle>#{data.round.number} {data.round.name}</PageTitle>
+	<PageTitle>{data.round.name}</PageTitle>
 
 	<div class="columns">
 		<div class="column">
