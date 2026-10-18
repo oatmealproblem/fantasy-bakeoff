@@ -45,7 +45,7 @@
 				const change = score.by_round[results.round.id] ?? 0;
 				const total = results.rounds
 					.filter((round) => round.number <= results.round.number)
-					.reduce((sum, round) => sum + (score.by_round[round.id] ?? 0), 0);
+					.reduce((sum, round) => sum + (score.by_round[round.id] ?? 0), score.score_adjustment);
 				return {
 					name: score.player_name + (score.player_id === results.player_id ? ' (you)' : ''),
 					change,

@@ -207,7 +207,8 @@ const player_fields = {
 	email: z
 		.string()
 		.trim()
-		.transform((v) => v || null)
+		.transform((v) => v || null),
+	score_adjustment: z.number().int().default(0)
 };
 
 export const add_player = form(
@@ -554,7 +555,8 @@ export const get_survey_results = query(z.string(), (token) => {
 	)
 		.map((score) => ({
 			...score,
-			player_name: players.find((p) => p.id === score.player_id)?.name ?? ''
+			player_name: players.find((p) => p.id === score.player_id)?.name ?? '',
+			score_adjustment: players.find((p) => p.id === score.player_id)?.score_adjustment ?? 0
 		}))
 		.sort((a, b) => b.total - a.total);
 

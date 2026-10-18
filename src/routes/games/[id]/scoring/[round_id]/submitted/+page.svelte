@@ -29,7 +29,10 @@
 					change: score?.by_round[data.round.id] ?? 0,
 					total: data.rounds
 						.filter((round) => round.number <= data.round.number)
-						.reduce((sum, round) => sum + (score?.by_round[round.id] ?? 0), 0)
+						.reduce(
+							(sum, round) => sum + (score?.by_round[round.id] ?? 0),
+							player.score_adjustment
+						)
 				};
 			})
 			.sort((a, b) => b.total - a.total)

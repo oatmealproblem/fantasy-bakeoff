@@ -14,7 +14,7 @@
 		flex: 1 1 100%;
 		min-width: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(var(--card-form-min, 16rem), 1fr));
 		align-items: end;
 		gap: 0.5rem;
 	}

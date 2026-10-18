@@ -102,10 +102,11 @@
 			<PlayerCard {player} />
 		{/each}
 		<Card>
-			<CardForm id="add-player" {...add_player_form}>
+			<CardForm id="add-player" {...add_player_form} style="--card-form-min: 10rem">
 				<input {...add_player_form.fields.game_id.as('hidden', game.id)} />
 				<Field label="Name" {...add_player_form.fields.name.as('text')} required />
 				<Field label="Email" {...add_player_form.fields.email.as('email')} />
+				<Field label="Starting score" {...add_player_form.fields.score_adjustment.as('number', 0)} />
 			</CardForm>
 			<CardActions>
 				<Button form="add-player" variant="card">Add player</Button>

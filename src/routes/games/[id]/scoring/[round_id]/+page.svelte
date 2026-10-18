@@ -62,8 +62,11 @@
 	const score_chart_rows = $derived(
 		data.players
 			.map((player) => {
-				const before = through_round(previous.find((s) => s.player_id === player.id));
-				const after = through_round(live.find((s) => s.player_id === player.id));
+				const before =
+					player.score_adjustment +
+					through_round(previous.find((s) => s.player_id === player.id));
+				const after =
+					player.score_adjustment + through_round(live.find((s) => s.player_id === player.id));
 				return { name: player.name, change: after - before, total: after, before };
 			})
 			.sort((a, b) => b.before - a.before)

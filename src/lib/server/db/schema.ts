@@ -56,7 +56,8 @@ export const player = sqliteTable(
 			.notNull()
 			.references(() => game.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
-		email: text('email')
+		email: text('email'),
+		score_adjustment: integer('score_adjustment').notNull().default(0)
 	},
 	(t) => [index('player_game_id_idx').on(t.game_id)]
 );
