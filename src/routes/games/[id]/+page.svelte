@@ -1,21 +1,27 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Button from '#lib/components/Button.svelte';
+	import Card from '#lib/components/Card.svelte';
+	import CardActions from '#lib/components/CardActions.svelte';
+	import CardForm from '#lib/components/CardForm.svelte';
+	import CardList from '#lib/components/CardList.svelte';
+	import Checkbox from '#lib/components/Checkbox.svelte';
+	import Field from '#lib/components/Field.svelte';
+	import Page from '#lib/components/Page.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
+	import SectionHeading from '#lib/components/SectionHeading.svelte';
 	import {
 		add_contestant,
 		add_player,
 		add_round,
-		delete_contestant,
 		delete_game,
-		delete_player,
-		delete_round,
 		get_game,
 		import_contestants,
-		release_surveys,
-		update_contestant,
-		update_game,
-		update_player,
-		update_round
+		update_game
 	} from '#lib/game.remote.ts';
+	import ContestantCard from './ContestantCard.svelte';
+	import PlayerCard from './PlayerCard.svelte';
+	import RoundCard from './RoundCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -26,19 +32,16 @@
 	onMount(() => {
 		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	});
-
-	const local_input = (date: Date) =>
-		new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 </script>
 
-<main>
+<Page>
 	<p><a href="/">← All games</a></p>
-	<h1>{game.name}</h1>
+	<PageTitle>{game.name}</PageTitle>
 
 	<form {...update_game}>
 		<input {...update_game.fields.id.as('hidden', game.id)} />
-		<input {...update_game.fields.name.as('text', game.name)} required />
-		<button>Rename</button>
+		<Field {...update_game.fields.name.as('text', game.name)} required />
+		<Button>Rename</Button>
 		{#each update_game.fields.name.issues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
@@ -46,64 +49,76 @@
 
 	<form {...delete_game}>
 		<input {...delete_game.fields.id.as('hidden', game.id)} />
-		<button
+		<Button
 			onclick={(e) => {
 				if (!confirm(`Delete ${game.name} and everything in it?`)) e.preventDefault();
-			}}>Delete game</button
+			}}>Delete game</Button
 		>
 	</form>
 
-	<h2>Players</h2>
-	<form {...add_player}>
-		<input {...add_player.fields.game_id.as('hidden', game.id)} />
-		<label>
-			Name
-			<input {...add_player.fields.name.as('text')} required />
-		</label>
-		<label>
-			Email
-			<input {...add_player.fields.email.as('email')} />
-		</label>
-		<button>Add player</button>
-	</form>
-
-	<ul>
-		{#each game.players as player (player.id)}
-			{const update = update_player.for(player.id)}
-			{const del = delete_player.for(player.id)}
-			<li>
-				<form id="update-player-{player.id}" {...update}>
-					<input {...update.fields.id.as('hidden', player.id)} />
-					<label>
-						Name
-						<input {...update.fields.name.as('text', player.name)} required />
-					</label>
-					<label>
-						Email
-						<input {...update.fields.email.as('email', player.email ?? '')} />
-					</label>
-				</form>
-				<button form="update-player-{player.id}">Save</button>
-				<form {...del}>
-					<input {...del.fields.id.as('hidden', player.id)} />
-					<button
-						onclick={(e) => {
-							if (!confirm(`Delete player ${player.name}?`)) e.preventDefault();
-						}}>Delete</button
-					>
-				</form>
-			</li>
+	<CardList>
+		{#each game.rounds as round (round.id)}
+			<RoundCard game_id={game.id} {round} {timezone} />
 		{/each}
-	</ul>
+		<Card>
+			<SectionHeading level={3} flush>New Round</SectionHeading>
+			<CardForm id="add-round" {...add_round}>
+				<input {...add_round.fields.game_id.as('hidden', game.id)} />
+				<input {...add_round.fields.timezone.as('hidden', timezone)} />
+				<Field label="Round name" {...add_round.fields.name.as('text')} required />
+				<Field label="Bonus question" {...add_round.fields.bonus_question.as('text')} />
+				<Checkbox
+					label="Allow finale prediction"
+					{...add_round.fields.allow_finale_prediction.as('checkbox')}
+				/>
+				<Checkbox label="Finale" {...add_round.fields.is_finale.as('checkbox')} />
+				<Field
+					label="Expected number sent home"
+					{...add_round.fields.expected_number_sent_home.as('number', 1)}
+					min="1"
+				/>
+				<Field
+					label="Response deadline"
+					{...add_round.fields.response_deadline.as('datetime-local')}
+				/>
+			</CardForm>
+			{#each add_round.fields.allIssues() ?? [] as issue (issue.message)}
+				<p class="issue">{issue.message}</p>
+			{/each}
+			<CardActions>
+				<Button form="add-round" variant="card">Add round</Button>
+			</CardActions>
+		</Card>
+	</CardList>
 
-	<h2>Contestants</h2>
+	<SectionHeading>Players</SectionHeading>
+	<CardList>
+		{#each game.players as player (player.id)}
+			<PlayerCard {player} />
+		{/each}
+		<Card>
+			<CardForm id="add-player" {...add_player}>
+				<input {...add_player.fields.game_id.as('hidden', game.id)} />
+				<Field label="Name" {...add_player.fields.name.as('text')} required />
+				<Field label="Email" {...add_player.fields.email.as('email')} />
+			</CardForm>
+			<CardActions>
+				<Button form="add-player" variant="card">Add player</Button>
+			</CardActions>
+		</Card>
+	</CardList>
+
+	<SectionHeading>Contestants</SectionHeading>
 	<form {...import_contestants}>
 		<input {...import_contestants.fields.game_id.as('hidden', game.id)} />
-		<label>
-			Series
-			<input {...import_contestants.fields.series.as('number')} min="1" max="20" required />
-		</label>
-		<button>Import from GBBO</button>
+		<Field
+			label="Series"
+			{...import_contestants.fields.series.as('number')}
+			min="1"
+			max="20"
+			required
+		/>
+		<Button>Import from GBBO</Button>
 		{#each import_contestants.fields.allIssues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
@@ -112,175 +127,25 @@
 		{/if}
 	</form>
 
-	<form {...add_contestant}>
-		<input {...add_contestant.fields.game_id.as('hidden', game.id)} />
-		<label>
-			Name
-			<input {...add_contestant.fields.name.as('text')} required />
-		</label>
-		<label>
-			Picture URL
-			<input {...add_contestant.fields.picture_url.as('url')} />
-		</label>
-		<button>Add contestant</button>
-	</form>
-
-	<ul>
-		{#each game.contestants as c (c.id)}
-			{const update = update_contestant.for(c.id)}
-			{const del = delete_contestant.for(c.id)}
-			<li>
-				{#if c.picture_url}
-					<img src={c.picture_url} alt={c.name} width="48" height="48" />
-				{/if}
-				<form id="update-contestant-{c.id}" {...update}>
-					<input {...update.fields.id.as('hidden', c.id)} />
-					<label>
-						Name
-						<input {...update.fields.name.as('text', c.name)} required />
-					</label>
-					<label>
-						Picture URL
-						<input {...update.fields.picture_url.as('url', c.picture_url)} />
-					</label>
-				</form>
-				<button form="update-contestant-{c.id}">Save</button>
-				<form {...del}>
-					<input {...del.fields.id.as('hidden', c.id)} />
-					<button
-						onclick={(e) => {
-							if (!confirm(`Delete contestant ${c.name}?`)) e.preventDefault();
-						}}>Delete</button
-					>
-				</form>
-			</li>
+	<CardList>
+		{#each game.contestants as contestant (contestant.id)}
+			<ContestantCard {contestant} />
 		{/each}
-	</ul>
+		<Card>
+			<CardForm id="add-contestant" {...add_contestant}>
+				<input {...add_contestant.fields.game_id.as('hidden', game.id)} />
+				<Field label="Name" {...add_contestant.fields.name.as('text')} required />
+				<Field label="Picture URL" {...add_contestant.fields.picture_url.as('url')} />
+			</CardForm>
+			<CardActions>
+				<Button form="add-contestant" variant="card">Add contestant</Button>
+			</CardActions>
+		</Card>
+	</CardList>
+</Page>
 
-	<h2>Rounds</h2>
-	<form {...add_round}>
-		<input {...add_round.fields.game_id.as('hidden', game.id)} />
-		<input {...add_round.fields.timezone.as('hidden', timezone)} />
-		<label>
-			Round name
-			<input {...add_round.fields.name.as('text')} required />
-		</label>
-		<label>
-			Bonus question
-			<input {...add_round.fields.bonus_question.as('text')} />
-		</label>
-		<label>
-			<input {...add_round.fields.allow_finale_prediction.as('checkbox')} />
-			Allow finale prediction
-		</label>
-		<label>
-			<input {...add_round.fields.is_finale.as('checkbox')} />
-			Finale
-		</label>
-		<label>
-			Expected number of bakers sent home
-			<input {...add_round.fields.expected_number_sent_home.as('number', 1)} min="1" />
-		</label>
-		<label>
-			Response deadline
-			<input {...add_round.fields.response_deadline.as('datetime-local')} />
-		</label>
-		<button class="primary">Add round</button>
-		{#each add_round.fields.allIssues() ?? [] as issue (issue.message)}
-			<p class="issue">{issue.message}</p>
-		{/each}
-	</form>
-
-	<ul>
-		{#each game.rounds as round (round.id)}
-			{const update = update_round.for(round.id)}
-			{const del = delete_round.for(round.id)}
-			{const release = release_surveys.for(round.id)}
-			{const complete = round.surveys.filter((s) => s.status === 'yes').length}
-			<li>
-				<h3>#{round.number} {round.name}</h3>
-				<p><a href="/games/{game.id}/scoring/{round.id}">Enter answers & scores</a></p>
-				<form id="update-round-{round.id}" {...update}>
-					<input {...update.fields.id.as('hidden', round.id)} />
-					<input {...update.fields.timezone.as('hidden', timezone)} />
-					<label>
-						Round name
-						<input {...update.fields.name.as('text', round.name)} required />
-					</label>
-					<label>
-						Bonus question
-						<input {...update.fields.bonus_question.as('text', round.bonus_question ?? '')} />
-					</label>
-					<label>
-						<input
-							{...update.fields.allow_finale_prediction.as(
-								'checkbox',
-								round.allow_finale_prediction
-							)}
-						/>
-						Allow finale prediction
-					</label>
-					<label>
-						<input {...update.fields.is_finale.as('checkbox', round.is_finale)} />
-						Finale
-					</label>
-					<label>
-						Expected # sent home
-						<input
-							{...update.fields.expected_number_sent_home.as(
-								'number',
-								round.expected_number_sent_home ?? 1
-							)}
-							min="1"
-						/>
-					</label>
-					<label>
-						Response deadline
-						<input
-							{...update.fields.response_deadline.as(
-								'datetime-local',
-								round.response_deadline ? local_input(round.response_deadline) : ''
-							)}
-						/>
-					</label>
-				</form>
-				<button form="update-round-{round.id}">Save</button>
-				<form {...del}>
-					<input {...del.fields.id.as('hidden', round.id)} />
-					<button
-						onclick={(e) => {
-							if (!confirm(`Delete round ${round.name}?`)) e.preventDefault();
-						}}>Delete</button
-					>
-				</form>
-				<form {...release}>
-					<input {...release.fields.round_id.as('hidden', round.id)} />
-					<input {...release.fields.timezone.as('hidden', timezone)} />
-					<button>Release surveys</button>
-					{#if release.result}
-						<p>Released {release.result.released} new survey(s).</p>
-						{#if release.result.released > 0 && !release.result.emailed}
-							<p>Emails were not sent to players — your account is not enabled to send email.</p>
-						{/if}
-					{/if}
-				</form>
-				{#if round.surveys.length > 0}
-					<details>
-						<summary>Survey links ({complete}/{round.surveys.length} complete)</summary>
-						<ul>
-							{#each round.surveys as s (s.player_id)}
-								<li>
-									{#if s.token}
-										<a href="/surveys/{s.token}">{s.player_name}</a> — {s.status}
-									{:else}
-										{s.player_name} — not released
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					</details>
-				{/if}
-			</li>
-		{/each}
-	</ul>
-</main>
+<style>
+	.issue {
+		flex: 1 1 100%;
+	}
+</style>

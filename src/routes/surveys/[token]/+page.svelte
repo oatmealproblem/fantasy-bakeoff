@@ -1,4 +1,9 @@
 <script lang="ts">
+	import Button from '#lib/components/Button.svelte';
+	import ContestantOption from '#lib/components/ContestantOption.svelte';
+	import Fieldset from '#lib/components/Fieldset.svelte';
+	import Page from '#lib/components/Page.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
 	import { get_survey, save_survey } from '#lib/game.remote.ts';
 	import type { PageProps } from './$types';
 
@@ -7,15 +12,8 @@
 	const survey = $derived(await get_survey(params.token));
 </script>
 
-{#snippet contestant(c: (typeof survey.contestants)[number])}
-	{#if c.picture_url}
-		<img src={c.picture_url} alt={c.name} width="48" height="48" />
-	{/if}
-	{c.name}
-{/snippet}
-
-<main>
-	<h1>{survey.round.name}</h1>
+<Page>
+	<PageTitle>{survey.round.name}</PageTitle>
 	<p>{survey.player_name}'s responses</p>
 	{#if survey.round.response_deadline}
 		<p>
@@ -37,128 +35,103 @@
 		{/if}
 
 		{#if !survey.round.is_finale}
-			<fieldset disabled={!survey.can_edit}>
-				<legend>Star baker</legend>
+			<Fieldset legend="Star baker" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
-					<label>
-						<input
-							{...save_survey.fields.star_baker.as(
-								'radio',
-								c.id,
-								survey.answers.star_baker === c.id
-							)}
-						/>
-						{@render contestant(c)}
-					</label>
+					<ContestantOption
+						{...save_survey.fields.star_baker.as('radio', c.id, survey.answers.star_baker === c.id)}
+						contestant={c}
+					/>
 				{/each}
-			</fieldset>
+			</Fieldset>
 
 			{#if survey.round.expected_number_sent_home != null && survey.round.expected_number_sent_home > 0}
-				<fieldset disabled={!survey.can_edit}>
-					<legend
-						>Sent home {#if survey.round.expected_number_sent_home > 1}({survey.round
-								.expected_number_sent_home}){/if}</legend
-					>
+				<Fieldset
+					legend={`Sent home${survey.round.expected_number_sent_home > 1 ? ` (${survey.round.expected_number_sent_home})` : ''}`}
+					disabled={!survey.can_edit}
+				>
 					{#each survey.contestants as c (c.id)}
-						<label>
-							{#if (survey.round.expected_number_sent_home ?? 1) === 1}
-								<input
-									{...save_survey.fields.sent_home_single.as(
-										'radio',
-										c.id,
-										survey.answers.sent_home.includes(c.id)
-									)}
-								/>
-							{:else}
-								<input
-									{...save_survey.fields.sent_home.as(
-										'checkbox',
-										c.id,
-										survey.answers.sent_home.includes(c.id)
-									)}
-								/>
-							{/if}
-							{@render contestant(c)}
-						</label>
+						{#if survey.round.expected_number_sent_home === 1}
+							<ContestantOption
+								{...save_survey.fields.sent_home_single.as(
+									'radio',
+									c.id,
+									survey.answers.sent_home.includes(c.id)
+								)}
+								contestant={c}
+							/>
+						{:else}
+							<ContestantOption
+								{...save_survey.fields.sent_home.as(
+									'checkbox',
+									c.id,
+									survey.answers.sent_home.includes(c.id)
+								)}
+								contestant={c}
+							/>
+						{/if}
 					{/each}
-				</fieldset>
+				</Fieldset>
 			{/if}
 		{/if}
 
-		<fieldset disabled={!survey.can_edit}>
-			<legend>First in the technical challenge</legend>
+		<Fieldset legend="First in the technical challenge" disabled={!survey.can_edit}>
 			{#each survey.contestants as c (c.id)}
-				<label>
-					<input
-						{...save_survey.fields.technical_challenge_first.as(
-							'radio',
-							c.id,
-							survey.answers.technical_challenge_first === c.id
-						)}
-					/>
-					{@render contestant(c)}
-				</label>
+				<ContestantOption
+					{...save_survey.fields.technical_challenge_first.as(
+						'radio',
+						c.id,
+						survey.answers.technical_challenge_first === c.id
+					)}
+					contestant={c}
+				/>
 			{/each}
-		</fieldset>
+		</Fieldset>
 
 		{#if survey.round.allow_finale_prediction}
-			<fieldset disabled={!survey.can_edit}>
-				<legend>Winner</legend>
+			<Fieldset legend="Winner" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
-					<label>
-						<input
-							{...save_survey.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}
-						/>
-						{@render contestant(c)}
-					</label>
+					<ContestantOption
+						{...save_survey.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}
+						contestant={c}
+					/>
 				{/each}
-			</fieldset>
+			</Fieldset>
 
-			<fieldset disabled={!survey.can_edit}>
-				<legend>Finalists (2)</legend>
+			<Fieldset legend="Finalists (2)" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
-					<label>
-						<input
-							{...save_survey.fields.finalists.as(
-								'checkbox',
-								c.id,
-								survey.answers.finalists.includes(c.id)
-							)}
-						/>
-						{@render contestant(c)}
-					</label>
+					<ContestantOption
+						{...save_survey.fields.finalists.as(
+							'checkbox',
+							c.id,
+							survey.answers.finalists.includes(c.id)
+						)}
+						contestant={c}
+					/>
 				{/each}
-			</fieldset>
+			</Fieldset>
 		{/if}
 
 		{#if survey.round.bonus_question}
-			<fieldset disabled={!survey.can_edit}>
-				<legend>Bonus: {survey.round.bonus_question}</legend>
+			<Fieldset legend={`Bonus: ${survey.round.bonus_question}`} disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
-					<label>
-						<input
-							{...save_survey.fields.bonus_question_answer.as(
-								'radio',
-								c.id,
-								survey.answers.bonus_question_answers.includes(c.id)
-							)}
-						/>
-						{@render contestant(c)}
-					</label>
+					<ContestantOption
+						{...save_survey.fields.bonus_question_answer.as(
+							'radio',
+							c.id,
+							survey.answers.bonus_question_answers.includes(c.id)
+						)}
+						contestant={c}
+					/>
 				{/each}
-			</fieldset>
+			</Fieldset>
 		{/if}
 
 		{#if survey.can_edit}
-			<button>Save responses</button>
+			<Button>Save responses</Button>
 		{:else if survey.scored}
 			<p>This round has been scored. Only the game creator can still edit responses.</p>
 		{:else}
 			<p>This survey is closed. Only the game creator can still edit it.</p>
 		{/if}
 	</form>
-
-	{#if save_survey.result?.saved}
-		<p>Responses saved.</p>
-	{/if}
-</main>
+</Page>

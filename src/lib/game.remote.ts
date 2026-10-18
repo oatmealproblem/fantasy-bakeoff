@@ -411,7 +411,7 @@ export const release_surveys = form(
 					const message = `${p.name}, your survey for ${row.name} is now available.${deadline}`;
 					return send_email(
 						p.email,
-						`Fantasy Bake Off: ${row.name} survey is available`,
+						`${row.name}: on your marks, get set, vote!`,
 						`${message} Here's your personal survey link: ${url}`,
 						html`<p>${message} <a href="${url}">Here's your personal survey link.</a></p>`
 					);
@@ -479,6 +479,8 @@ export const get_survey = query(z.string(), (token) => {
 
 	return {
 		player_name: player.name,
+		game_id: game_row.id,
+		is_creator: user?.id === game_row.created_by_id,
 		round: {
 			name: round_row.name,
 			number: round_row.number,
@@ -647,7 +649,7 @@ export const save_survey = form(survey_fields, (data) => {
 		}
 	});
 
-	return { saved: true };
+	redirect(303, `/surveys/${data.token}/submitted`);
 });
 
 export const get_round_scoring = query(
@@ -791,7 +793,7 @@ export const save_round_answers = form(answer_fields, async (data) => {
 				const message = `${r.name}, ${round_row.name} has been scored.`;
 				return send_email(
 					r.email,
-					`Fantasy Bake Off: ${round_row.name} has been scored`,
+					`${round_row.name}: and this week's star voter is...`,
 					`${message} See the results here: ${url}`,
 					html`<p>${message} <a href="${url}">See the results here.</a></p>`
 				);
@@ -799,5 +801,5 @@ export const save_round_answers = form(answer_fields, async (data) => {
 		);
 	}
 
-	return { saved: true };
+	redirect(303, `/games/${round_row.game_id}/scoring/${round_row.id}/submitted`);
 });

@@ -1,5 +1,12 @@
 <script lang="ts">
 	import type { RemoteFormField } from '$app/server';
+	import Button from '#lib/components/Button.svelte';
+	import ContestantOption from '#lib/components/ContestantOption.svelte';
+	import Fieldset from '#lib/components/Fieldset.svelte';
+	import Page from '#lib/components/Page.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
+	import SectionHeading from '#lib/components/SectionHeading.svelte';
+	import ScoreChart from '#lib/components/ScoreChart.svelte';
 	import { get_round_scoring, save_round_answers } from '#lib/game.remote.ts';
 	import { round_answers, score_game } from '#lib/scoring.ts';
 	import type { PageProps } from './$types';
@@ -45,146 +52,114 @@
 			data.predictions
 		)
 	);
-</script>
 
-{#snippet name(c: (typeof data.contestants)[number])}
-	{#if c.picture_url}
-		<img src={c.picture_url} alt={c.name} width="48" height="48" />
-	{/if}
-	{c.name}
-{/snippet}
+	const through_round = (score: { by_round: Record<string, number> } | undefined) =>
+		data.rounds
+			.filter((round) => round.number <= data.round.number)
+			.reduce((sum, round) => sum + (score?.by_round[round.id] ?? 0), 0);
+
+	const score_chart_rows = $derived(
+		data.players
+			.map((player) => {
+				const before = through_round(previous.find((s) => s.player_id === player.id));
+				const after = through_round(live.find((s) => s.player_id === player.id));
+				return { name: player.name, change: after - before, total: after, before };
+			})
+			.sort((a, b) => b.before - a.before)
+			.map(({ before, ...row }) => row)
+	);
+</script>
 
 {#snippet radios(field: RemoteFormField<string>, selected: string | undefined)}
 	{#each data.contestants as c (c.id)}
-		<label>
-			<input {...field.as('radio', c.id, selected === c.id)} />
-			{@render name(c)}
-		</label>
+		<ContestantOption {...field.as('radio', c.id, selected === c.id)} contestant={c} />
 	{/each}
 {/snippet}
 
 {#snippet checkboxes(field: RemoteFormField<string[]>, selected: string[])}
 	{#each data.contestants as c (c.id)}
-		<label>
-			<input {...field.as('checkbox', c.id, selected.includes(c.id))} />
-			{@render name(c)}
-		</label>
+		<ContestantOption {...field.as('checkbox', c.id, selected.includes(c.id))} contestant={c} />
 	{/each}
 {/snippet}
 
-<main>
+<Page>
 	<p><a href="/games/{params.id}">← Back to game</a></p>
-	<h1>#{data.round.number} {data.round.name}</h1>
+	<PageTitle>#{data.round.number} {data.round.name}</PageTitle>
 
-	<h2>Scores</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>Player</th>
-				<th>Previous</th>
-				<th>This round</th>
-				<th>Total</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each data.players as player (player.id)}
-				{const before = $derived(previous.find((s) => s.player_id === player.id)?.total ?? 0)}
-				{const after = $derived(live.find((s) => s.player_id === player.id)?.total ?? 0)}
-				<tr>
-					<td>{player.name}</td>
-					<td>{before}</td>
-					<td>{after - before > 0 ? `+${after - before}` : after - before}</td>
-					<td>{after}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+	<SectionHeading>Scores</SectionHeading>
+	<ScoreChart rows={score_chart_rows} />
 
-	<h2>Answers</h2>
+	<SectionHeading>Answers</SectionHeading>
 	<form {...save_round_answers}>
 		<input {...save_round_answers.fields.round_id.as('hidden', data.round.id)} />
 
 		{#if !data.round.is_finale}
-			<fieldset>
-				<legend>Star baker</legend>
+			<Fieldset legend="Star baker">
 				{@render radios(save_round_answers.fields.star_baker, data.saved.star_baker)}
-			</fieldset>
-			<fieldset>
-				<legend>Star baker (discussed)</legend>
+			</Fieldset>
+			<Fieldset legend="Star baker (discussed)">
 				{@render checkboxes(
 					save_round_answers.fields.star_baker_discussed,
 					data.saved.star_baker_discussed
 				)}
-			</fieldset>
-			<fieldset>
-				<legend>Sent home</legend>
+			</Fieldset>
+			<Fieldset legend="Sent home">
 				{@render checkboxes(save_round_answers.fields.sent_home, data.saved.sent_home)}
-			</fieldset>
-			<fieldset>
-				<legend>Sent home (discussed)</legend>
+			</Fieldset>
+			<Fieldset legend="Sent home (discussed)">
 				{@render checkboxes(
 					save_round_answers.fields.sent_home_discussed,
 					data.saved.sent_home_discussed
 				)}
-			</fieldset>
+			</Fieldset>
 		{/if}
 
-		<fieldset>
-			<legend>Technical challenge 1st</legend>
+		<Fieldset legend="Technical challenge 1st">
 			{@render radios(
 				save_round_answers.fields.technical_challenge_first,
 				data.saved.technical_challenge_first
 			)}
-		</fieldset>
-		<fieldset>
-			<legend>Technical challenge 2nd</legend>
+		</Fieldset>
+		<Fieldset legend="Technical challenge 2nd">
 			{@render radios(
 				save_round_answers.fields.technical_challenge_second,
 				data.saved.technical_challenge_second
 			)}
-		</fieldset>
-		<fieldset>
-			<legend>Technical challenge 3rd</legend>
+		</Fieldset>
+		<Fieldset legend="Technical challenge 3rd">
 			{@render radios(
 				save_round_answers.fields.technical_challenge_third,
 				data.saved.technical_challenge_third
 			)}
-		</fieldset>
-		<fieldset>
-			<legend>Technical challenge last</legend>
+		</Fieldset>
+		<Fieldset legend="Technical challenge last">
 			{@render radios(
 				save_round_answers.fields.technical_challenge_last,
 				data.saved.technical_challenge_last
 			)}
-		</fieldset>
+		</Fieldset>
 
 		{#if data.round.bonus_question}
-			<fieldset>
-				<legend>Bonus: {data.round.bonus_question}</legend>
+			<Fieldset legend={`Bonus: ${data.round.bonus_question}`}>
 				{@render checkboxes(
 					save_round_answers.fields.bonus_question_answers,
 					data.saved.bonus_question_answers
 				)}
-			</fieldset>
+			</Fieldset>
 		{/if}
 
 		{#if data.round.is_finale}
-			<fieldset>
-				<legend>Winner</legend>
+			<Fieldset legend="Winner">
 				{@render radios(save_round_answers.fields.winner, data.saved.winner)}
-			</fieldset>
-			<fieldset>
-				<legend>Finalists</legend>
+			</Fieldset>
+			<Fieldset legend="Finalists">
 				{@render checkboxes(save_round_answers.fields.finalist, data.saved.finalist)}
-			</fieldset>
+			</Fieldset>
 		{/if}
 
-		<button>Save answers</button>
-		{#if save_round_answers.result?.saved}
-			<p>Answers saved.</p>
-		{/if}
+		<Button>Save answers</Button>
 		{#each save_round_answers.fields.allIssues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
 	</form>
-</main>
+</Page>
