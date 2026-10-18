@@ -27,6 +27,11 @@
 	let { params }: PageProps = $props();
 
 	const game = $derived(await get_game(params.id));
+	const update = $derived(update_game.for(params.id));
+	const add_round_form = $derived(add_round.for(params.id));
+	const add_player_form = $derived(add_player.for(params.id));
+	const import_form = $derived(import_contestants.for(params.id));
+	const add_contestant_form = $derived(add_contestant.for(params.id));
 
 	let timezone = $state('');
 	onMount(() => {
@@ -38,11 +43,11 @@
 	<p><a href="/">← All games</a></p>
 	<PageTitle>{game.name}</PageTitle>
 
-	<form {...update_game}>
-		<input {...update_game.fields.id.as('hidden', game.id)} />
-		<Field {...update_game.fields.name.as('text', game.name)} required />
+	<form {...update}>
+		<input {...update.fields.id.as('hidden', game.id)} />
+		<Field {...update.fields.name.as('text', game.name)} required />
 		<Button>Rename</Button>
-		{#each update_game.fields.name.issues() ?? [] as issue (issue.message)}
+		{#each update.fields.name.issues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
 	</form>
@@ -62,27 +67,27 @@
 		{/each}
 		<Card>
 			<SectionHeading level={3} flush>New Round</SectionHeading>
-			<CardForm id="add-round" {...add_round}>
-				<input {...add_round.fields.game_id.as('hidden', game.id)} />
-				<input {...add_round.fields.timezone.as('hidden', timezone)} />
-				<Field label="Round name" {...add_round.fields.name.as('text')} required />
-				<Field label="Bonus question" {...add_round.fields.bonus_question.as('text')} />
+			<CardForm id="add-round" {...add_round_form}>
+				<input {...add_round_form.fields.game_id.as('hidden', game.id)} />
+				<input {...add_round_form.fields.timezone.as('hidden', timezone)} />
+				<Field label="Round name" {...add_round_form.fields.name.as('text')} required />
+				<Field label="Bonus question" {...add_round_form.fields.bonus_question.as('text')} />
 				<Checkbox
 					label="Allow finale prediction"
-					{...add_round.fields.allow_finale_prediction.as('checkbox')}
+					{...add_round_form.fields.allow_finale_prediction.as('checkbox')}
 				/>
-				<Checkbox label="Finale" {...add_round.fields.is_finale.as('checkbox')} />
+				<Checkbox label="Finale" {...add_round_form.fields.is_finale.as('checkbox')} />
 				<Field
 					label="Expected number sent home"
-					{...add_round.fields.expected_number_sent_home.as('number', 1)}
+					{...add_round_form.fields.expected_number_sent_home.as('number', 1)}
 					min="1"
 				/>
 				<Field
 					label="Response deadline"
-					{...add_round.fields.response_deadline.as('datetime-local')}
+					{...add_round_form.fields.response_deadline.as('datetime-local')}
 				/>
 			</CardForm>
-			{#each add_round.fields.allIssues() ?? [] as issue (issue.message)}
+			{#each add_round_form.fields.allIssues() ?? [] as issue (issue.message)}
 				<p class="issue">{issue.message}</p>
 			{/each}
 			<CardActions>
@@ -97,10 +102,10 @@
 			<PlayerCard {player} />
 		{/each}
 		<Card>
-			<CardForm id="add-player" {...add_player}>
-				<input {...add_player.fields.game_id.as('hidden', game.id)} />
-				<Field label="Name" {...add_player.fields.name.as('text')} required />
-				<Field label="Email" {...add_player.fields.email.as('email')} />
+			<CardForm id="add-player" {...add_player_form}>
+				<input {...add_player_form.fields.game_id.as('hidden', game.id)} />
+				<Field label="Name" {...add_player_form.fields.name.as('text')} required />
+				<Field label="Email" {...add_player_form.fields.email.as('email')} />
 			</CardForm>
 			<CardActions>
 				<Button form="add-player" variant="card">Add player</Button>
@@ -109,21 +114,15 @@
 	</CardList>
 
 	<SectionHeading>Contestants</SectionHeading>
-	<form {...import_contestants}>
-		<input {...import_contestants.fields.game_id.as('hidden', game.id)} />
-		<Field
-			label="Series"
-			{...import_contestants.fields.series.as('number')}
-			min="1"
-			max="20"
-			required
-		/>
+	<form {...import_form}>
+		<input {...import_form.fields.game_id.as('hidden', game.id)} />
+		<Field label="Series" {...import_form.fields.series.as('number')} min="1" max="20" required />
 		<Button>Import from GBBO</Button>
-		{#each import_contestants.fields.allIssues() ?? [] as issue (issue.message)}
+		{#each import_form.fields.allIssues() ?? [] as issue (issue.message)}
 			<p class="issue">{issue.message}</p>
 		{/each}
-		{#if import_contestants.result}
-			<p>Imported {import_contestants.result.imported} contestants.</p>
+		{#if import_form.result}
+			<p>Imported {import_form.result.imported} contestants.</p>
 		{/if}
 	</form>
 
@@ -132,10 +131,10 @@
 			<ContestantCard {contestant} />
 		{/each}
 		<Card>
-			<CardForm id="add-contestant" {...add_contestant}>
-				<input {...add_contestant.fields.game_id.as('hidden', game.id)} />
-				<Field label="Name" {...add_contestant.fields.name.as('text')} required />
-				<Field label="Picture URL" {...add_contestant.fields.picture_url.as('url')} />
+			<CardForm id="add-contestant" {...add_contestant_form}>
+				<input {...add_contestant_form.fields.game_id.as('hidden', game.id)} />
+				<Field label="Name" {...add_contestant_form.fields.name.as('text')} required />
+				<Field label="Picture URL" {...add_contestant_form.fields.picture_url.as('url')} />
 			</CardForm>
 			<CardActions>
 				<Button form="add-contestant" variant="card">Add contestant</Button>

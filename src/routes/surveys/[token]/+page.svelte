@@ -10,6 +10,7 @@
 	let { params }: PageProps = $props();
 
 	const survey = $derived(await get_survey(params.token));
+	const form = $derived(save_survey.for(params.token));
 </script>
 
 <Page>
@@ -25,11 +26,11 @@
 		<p><a href="/surveys/{params.token}/results">View results</a></p>
 	{/if}
 
-	<form {...save_survey}>
-		<input {...save_survey.fields.token.as('hidden', params.token)} />
+	<form {...form}>
+		<input {...form.fields.token.as('hidden', params.token)} />
 
 		{#if survey.can_edit}
-			{#each save_survey.fields.allIssues() ?? [] as issue (issue.message)}
+			{#each form.fields.allIssues() ?? [] as issue (issue.message)}
 				<p class="issue">{issue.message}</p>
 			{/each}
 		{/if}
@@ -38,7 +39,7 @@
 			<Fieldset legend="Star baker" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption
-						{...save_survey.fields.star_baker.as('radio', c.id, survey.answers.star_baker === c.id)}
+						{...form.fields.star_baker.as('radio', c.id, survey.answers.star_baker === c.id)}
 						contestant={c}
 					/>
 				{/each}
@@ -52,7 +53,7 @@
 					{#each survey.contestants as c (c.id)}
 						{#if survey.round.expected_number_sent_home === 1}
 							<ContestantOption
-								{...save_survey.fields.sent_home_single.as(
+								{...form.fields.sent_home_single.as(
 									'radio',
 									c.id,
 									survey.answers.sent_home.includes(c.id)
@@ -61,7 +62,7 @@
 							/>
 						{:else}
 							<ContestantOption
-								{...save_survey.fields.sent_home.as(
+								{...form.fields.sent_home.as(
 									'checkbox',
 									c.id,
 									survey.answers.sent_home.includes(c.id)
@@ -77,7 +78,7 @@
 		<Fieldset legend="First in the technical challenge" disabled={!survey.can_edit}>
 			{#each survey.contestants as c (c.id)}
 				<ContestantOption
-					{...save_survey.fields.technical_challenge_first.as(
+					{...form.fields.technical_challenge_first.as(
 						'radio',
 						c.id,
 						survey.answers.technical_challenge_first === c.id
@@ -91,7 +92,7 @@
 			<Fieldset legend="Winner" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption
-						{...save_survey.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}
+						{...form.fields.winner.as('radio', c.id, survey.answers.winner === c.id)}
 						contestant={c}
 					/>
 				{/each}
@@ -100,11 +101,7 @@
 			<Fieldset legend="Finalists (2)" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption
-						{...save_survey.fields.finalists.as(
-							'checkbox',
-							c.id,
-							survey.answers.finalists.includes(c.id)
-						)}
+						{...form.fields.finalists.as('checkbox', c.id, survey.answers.finalists.includes(c.id))}
 						contestant={c}
 					/>
 				{/each}
@@ -115,7 +112,7 @@
 			<Fieldset legend={`Bonus: ${survey.round.bonus_question}`} disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption
-						{...save_survey.fields.bonus_question_answer.as(
+						{...form.fields.bonus_question_answer.as(
 							'radio',
 							c.id,
 							survey.answers.bonus_question_answers.includes(c.id)
