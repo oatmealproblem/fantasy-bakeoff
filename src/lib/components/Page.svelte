@@ -1,10 +1,15 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	let { narrow = false, children }: { narrow?: boolean; children: Snippet } = $props();
+	let {
+		narrow = false,
+		wide = false,
+		fill = false,
+		children
+	}: { narrow?: boolean; wide?: boolean; fill?: boolean; children: Snippet } = $props();
 </script>
 
-<main class="page" class:narrow>
+<main class="page" class:narrow class:wide class:fill>
 	{@render children()}
 </main>
 
@@ -25,5 +30,17 @@
 		margin-block: 4rem auto;
 		padding: 2rem;
 		background: var(--surface-alt);
+	}
+
+	.wide {
+		max-width: 80rem;
+	}
+
+	.fill {
+		display: flex;
+		flex: 0 0 auto;
+		flex-direction: column;
+		height: 100svh;
+		overflow: hidden;
 	}
 </style>

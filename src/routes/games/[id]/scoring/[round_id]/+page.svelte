@@ -67,7 +67,7 @@
 				return { name: player.name, change: after - before, total: after, before };
 			})
 			.sort((a, b) => b.before - a.before)
-			.map(({ before, ...row }) => row)
+			.map(({ name, change, total }) => ({ name, change, total }))
 	);
 </script>
 
@@ -83,66 +83,111 @@
 	{/each}
 {/snippet}
 
-<Page>
+<Page wide fill>
 	<p><a href="/games/{params.id}">← Back to game</a></p>
 	<PageTitle>#{data.round.number} {data.round.name}</PageTitle>
 
-	<SectionHeading>Scores</SectionHeading>
-	<ScoreChart rows={score_chart_rows} />
+	<div class="columns">
+		<div class="column">
+			<SectionHeading>Answers</SectionHeading>
+			<form {...form}>
+				<input {...form.fields.round_id.as('hidden', data.round.id)} />
 
-	<SectionHeading>Answers</SectionHeading>
-	<form {...form}>
-		<input {...form.fields.round_id.as('hidden', data.round.id)} />
+				{#if !data.round.is_finale}
+					<Fieldset legend="Star baker">
+						{@render radios(form.fields.star_baker, data.saved.star_baker)}
+					</Fieldset>
+					<Fieldset legend="Star baker (discussed)">
+						{@render checkboxes(form.fields.star_baker_discussed, data.saved.star_baker_discussed)}
+					</Fieldset>
+					<Fieldset legend="Sent home">
+						{@render checkboxes(form.fields.sent_home, data.saved.sent_home)}
+					</Fieldset>
+					<Fieldset legend="Sent home (discussed)">
+						{@render checkboxes(form.fields.sent_home_discussed, data.saved.sent_home_discussed)}
+					</Fieldset>
+				{/if}
 
-		{#if !data.round.is_finale}
-			<Fieldset legend="Star baker">
-				{@render radios(form.fields.star_baker, data.saved.star_baker)}
-			</Fieldset>
-			<Fieldset legend="Star baker (discussed)">
-				{@render checkboxes(form.fields.star_baker_discussed, data.saved.star_baker_discussed)}
-			</Fieldset>
-			<Fieldset legend="Sent home">
-				{@render checkboxes(form.fields.sent_home, data.saved.sent_home)}
-			</Fieldset>
-			<Fieldset legend="Sent home (discussed)">
-				{@render checkboxes(form.fields.sent_home_discussed, data.saved.sent_home_discussed)}
-			</Fieldset>
-		{/if}
+				<Fieldset legend="Technical challenge 1st">
+					{@render radios(
+						form.fields.technical_challenge_first,
+						data.saved.technical_challenge_first
+					)}
+				</Fieldset>
+				<Fieldset legend="Technical challenge 2nd">
+					{@render radios(
+						form.fields.technical_challenge_second,
+						data.saved.technical_challenge_second
+					)}
+				</Fieldset>
+				<Fieldset legend="Technical challenge 3rd">
+					{@render radios(
+						form.fields.technical_challenge_third,
+						data.saved.technical_challenge_third
+					)}
+				</Fieldset>
+				<Fieldset legend="Technical challenge last">
+					{@render radios(
+						form.fields.technical_challenge_last,
+						data.saved.technical_challenge_last
+					)}
+				</Fieldset>
 
-		<Fieldset legend="Technical challenge 1st">
-			{@render radios(form.fields.technical_challenge_first, data.saved.technical_challenge_first)}
-		</Fieldset>
-		<Fieldset legend="Technical challenge 2nd">
-			{@render radios(
-				form.fields.technical_challenge_second,
-				data.saved.technical_challenge_second
-			)}
-		</Fieldset>
-		<Fieldset legend="Technical challenge 3rd">
-			{@render radios(form.fields.technical_challenge_third, data.saved.technical_challenge_third)}
-		</Fieldset>
-		<Fieldset legend="Technical challenge last">
-			{@render radios(form.fields.technical_challenge_last, data.saved.technical_challenge_last)}
-		</Fieldset>
+				{#if data.round.bonus_question}
+					<Fieldset legend={`Bonus: ${data.round.bonus_question}`}>
+						{@render checkboxes(
+							form.fields.bonus_question_answers,
+							data.saved.bonus_question_answers
+						)}
+					</Fieldset>
+				{/if}
 
-		{#if data.round.bonus_question}
-			<Fieldset legend={`Bonus: ${data.round.bonus_question}`}>
-				{@render checkboxes(form.fields.bonus_question_answers, data.saved.bonus_question_answers)}
-			</Fieldset>
-		{/if}
+				{#if data.round.is_finale}
+					<Fieldset legend="Winner">
+						{@render radios(form.fields.winner, data.saved.winner)}
+					</Fieldset>
+					<Fieldset legend="Finalists">
+						{@render checkboxes(form.fields.finalist, data.saved.finalist)}
+					</Fieldset>
+				{/if}
 
-		{#if data.round.is_finale}
-			<Fieldset legend="Winner">
-				{@render radios(form.fields.winner, data.saved.winner)}
-			</Fieldset>
-			<Fieldset legend="Finalists">
-				{@render checkboxes(form.fields.finalist, data.saved.finalist)}
-			</Fieldset>
-		{/if}
+				<Button>Save answers</Button>
+				{#each form.fields.allIssues() ?? [] as issue (issue.message)}
+					<p class="issue">{issue.message}</p>
+				{/each}
+			</form>
+		</div>
 
-		<Button>Save answers</Button>
-		{#each form.fields.allIssues() ?? [] as issue (issue.message)}
-			<p class="issue">{issue.message}</p>
-		{/each}
-	</form>
+		<div class="column">
+			<SectionHeading>Scores</SectionHeading>
+			<ScoreChart rows={score_chart_rows} />
+		</div>
+	</div>
 </Page>
+
+<style>
+	.columns {
+		flex: 1;
+		display: grid;
+		gap: 0 2rem;
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	.column {
+		padding-block-end: 1.5rem;
+	}
+
+	@media (min-width: 80rem) and (min-height: 30rem) {
+		.columns {
+			overflow-y: hidden;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
+		}
+
+		.column {
+			min-height: 0;
+			overflow-y: auto;
+		}
+	}
+</style>
