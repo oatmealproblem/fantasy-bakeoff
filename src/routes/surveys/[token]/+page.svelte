@@ -89,6 +89,14 @@
 		</Fieldset>
 
 		{#if survey.round.allow_finale_prediction}
+			{#if survey.earlier_prediction}
+				<p>
+					Previous finale predictions: winner
+					{survey.earlier_prediction.winner ?? 'not picked'}, finalists
+					{survey.earlier_prediction.finalists.join(', ') || 'not picked'}.
+				</p>
+			{/if}
+
 			<Fieldset legend="Season Winner" disabled={!survey.can_edit}>
 				{#each survey.contestants as c (c.id)}
 					<ContestantOption

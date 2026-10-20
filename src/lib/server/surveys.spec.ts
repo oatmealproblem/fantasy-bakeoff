@@ -1,8 +1,10 @@
 import { expect, test } from 'vitest';
 import {
 	eliminated_contestants,
+	latest_prediction,
 	missing_survey_answers,
 	survey_status,
+	type PredictionPick,
 	type SurveyRound,
 	type SurveyRole
 } from './surveys.ts';
@@ -83,4 +85,21 @@ test('eliminated contestants are those sent home in earlier rounds', () => {
 	expect([...eliminated_contestants(rounds, answers, 1)]).toEqual([]);
 	expect([...eliminated_contestants(rounds, answers, 2)]).toEqual(['a']);
 	expect([...eliminated_contestants(rounds, answers, 3)]).toEqual(['a', 'c']);
+});
+
+test('latest_prediction uses only the most recent round and returns null without picks', () => {
+	const picks: PredictionPick[] = [
+		{ round_number: 1, round_name: 'Round 1', role: 'winner', name: 'A' },
+		{ round_number: 1, round_name: 'Round 1', role: 'finalist', name: 'B' },
+		{ round_number: 2, round_name: 'Round 2', role: 'winner', name: 'C' },
+		{ round_number: 2, round_name: 'Round 2', role: 'finalist', name: 'D' },
+		{ round_number: 2, round_name: 'Round 2', role: 'finalist', name: 'E' }
+	];
+
+	expect(latest_prediction(picks)).toEqual({
+		round_name: 'Round 2',
+		winner: 'C',
+		finalists: ['D', 'E']
+	});
+	expect(latest_prediction([])).toBeNull();
 });

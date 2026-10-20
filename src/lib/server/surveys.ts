@@ -56,3 +56,23 @@ export function survey_status(
 	if (selections.length === 0) return 'no';
 	return missing_survey_answers(round, selections).length === 0 ? 'yes' : 'partial';
 }
+
+export type PredictionPick = {
+	round_number: number;
+	round_name: string;
+	role: string;
+	name: string;
+};
+
+export function latest_prediction(picks: PredictionPick[]) {
+	if (picks.length === 0) return null;
+
+	const round_number = Math.max(...picks.map((p) => p.round_number));
+	const latest = picks.filter((p) => p.round_number === round_number);
+
+	return {
+		round_name: latest[0].round_name,
+		winner: latest.find((p) => p.role === 'winner')?.name ?? null,
+		finalists: latest.filter((p) => p.role === 'finalist').map((p) => p.name)
+	};
+}

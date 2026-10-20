@@ -1,6 +1,6 @@
 import { error, invalid, redirect } from '@sveltejs/kit';
 import { form, getRequestEvent, query } from '$app/server';
-import { and, asc, desc, eq, inArray, max } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, max } from 'drizzle-orm';
 import { z } from 'zod';
 import { parse_bakers } from '#lib/server/bakers.ts';
 import { html } from '#lib/server/html.ts';
@@ -20,6 +20,7 @@ import {
 import { round_answers, score_breakdown, score_game, type RoundRole } from '#lib/scoring.ts';
 import {
 	eliminated_contestants,
+	latest_prediction,
 	missing_survey_answers,
 	survey_status,
 	type SurveyRole,
@@ -461,6 +462,30 @@ function survey_answers(response_id: string) {
 	};
 }
 
+function earlier_prediction(player_id: string, round_number: number) {
+	return latest_prediction(
+		db
+			.select({
+				round_number: round.number,
+				round_name: round.name,
+				role: response_contestant.role,
+				name: contestant.name
+			})
+			.from(response)
+			.innerJoin(round, eq(round.id, response.round_id))
+			.innerJoin(response_contestant, eq(response_contestant.response_id, response.id))
+			.innerJoin(contestant, eq(contestant.id, response_contestant.contestant_id))
+			.where(
+				and(
+					eq(response.player_id, player_id),
+					lt(round.number, round_number),
+					inArray(response_contestant.role, ['winner', 'finalist'])
+				)
+			)
+			.all()
+	);
+}
+
 function round_scored(round_id: string) {
 	return (
 		db
@@ -497,6 +522,9 @@ export const get_survey = query(z.string(), (token) => {
 			picture_url: c.picture_url
 		})),
 		answers: survey_answers(row.id),
+		earlier_prediction: round_row.allow_finale_prediction
+			? earlier_prediction(row.player_id, round_row.number)
+			: null,
 		deadline_passed: closed,
 		scored,
 		can_edit: user?.id === game_row.created_by_id || (!closed && !scored)
