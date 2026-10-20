@@ -224,10 +224,33 @@ test('ignores a winner prediction that was changed away', () => {
 		[
 			{ response_id: 'resp1', role: 'winner', contestant_id: 'a' },
 			{ response_id: 'resp1', role: 'finalist', contestant_id: 'b' },
-			{ response_id: 'resp2', role: 'winner', contestant_id: 'x' }
+			{ response_id: 'resp2', role: 'winner', contestant_id: 'x' },
+			{ response_id: 'resp2', role: 'finalist', contestant_id: 'b' }
 		]
 	);
-	expect(scores[0].total).toBe(6);
+	expect(scores[0].total).toBe(3);
+});
+
+test('does not score a finalist dropped from the latest prediction', () => {
+	const scores = score_game(
+		[prediction_round('r1', 1), { ...prediction_round('r2', 2), is_finale: true }],
+		['p1'],
+		[
+			{ round_id: 'r2', role: 'winner', contestant_id: 'w' },
+			{ round_id: 'r2', role: 'finalist', contestant_id: 'a' }
+		],
+		[
+			{ id: 'resp1', player_id: 'p1', round_id: 'r1' },
+			{ id: 'resp2', player_id: 'p1', round_id: 'r2' }
+		],
+		[
+			{ response_id: 'resp1', role: 'finalist', contestant_id: 'a' },
+			{ response_id: 'resp1', role: 'finalist', contestant_id: 'b' },
+			{ response_id: 'resp2', role: 'finalist', contestant_id: 'b' },
+			{ response_id: 'resp2', role: 'finalist', contestant_id: 'c' }
+		]
+	);
+	expect(scores[0].total).toBe(0);
 });
 
 test('breaks down where points came from', () => {

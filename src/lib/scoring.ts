@@ -183,6 +183,8 @@ function score_finale_prediction(
 	const latest_picks = picks(latest);
 
 	for (const finalist of actual) {
+		if (!latest_picks.has(finalist)) continue;
+
 		const winner_correct =
 			actual_winner !== undefined && finalist === actual_winner && latest.winner === actual_winner;
 
