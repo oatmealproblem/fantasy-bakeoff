@@ -25,6 +25,9 @@
 	{#if survey.scored}
 		<p><a href="/surveys/{params.token}/results">View results</a></p>
 	{/if}
+	{#if survey.round.survey_message}
+		<p class="message">{survey.round.survey_message}</p>
+	{/if}
 
 	<form {...form}>
 		<input {...form.fields.token.as('hidden', params.token)} />
@@ -140,3 +143,9 @@
 		{/if}
 	</form>
 </Page>
+
+<style>
+	.message {
+		white-space: pre-line;
+	}
+</style>

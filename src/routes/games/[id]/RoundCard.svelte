@@ -12,6 +12,7 @@
 		id: string;
 		number: number;
 		name: string;
+		survey_message: string | null;
 		bonus_question: string | null;
 		allow_finale_prediction: boolean;
 		is_finale: boolean;
@@ -67,6 +68,12 @@
 				'datetime-local',
 				round.response_deadline ? local_input(round.response_deadline) : ''
 			)}
+		/>
+		<Field
+			label="Survey message"
+			multiline
+			wide
+			{...update.fields.survey_message.as('text', round.survey_message ?? '')}
 		/>
 	</CardForm>
 	<CardActions>

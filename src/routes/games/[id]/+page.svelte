@@ -86,6 +86,12 @@
 					label="Response deadline"
 					{...add_round_form.fields.response_deadline.as('datetime-local')}
 				/>
+				<Field
+					label="Survey message"
+					multiline
+					wide
+					{...add_round_form.fields.survey_message.as('text')}
+				/>
 			</CardForm>
 			{#each add_round_form.fields.allIssues() ?? [] as issue (issue.message)}
 				<p class="issue">{issue.message}</p>
@@ -106,7 +112,10 @@
 				<input {...add_player_form.fields.game_id.as('hidden', game.id)} />
 				<Field label="Name" {...add_player_form.fields.name.as('text')} required />
 				<Field label="Email" {...add_player_form.fields.email.as('email')} />
-				<Field label="Starting score" {...add_player_form.fields.score_adjustment.as('number', 0)} />
+				<Field
+					label="Starting score"
+					{...add_player_form.fields.score_adjustment.as('number', 0)}
+				/>
 			</CardForm>
 			<CardActions>
 				<Button form="add-player" variant="card">Add player</Button>

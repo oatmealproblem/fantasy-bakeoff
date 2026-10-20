@@ -2,6 +2,7 @@
 	import type { RemoteFormField } from '$app/server';
 	import Button from '#lib/components/Button.svelte';
 	import ContestantOption from '#lib/components/ContestantOption.svelte';
+	import Field from '#lib/components/Field.svelte';
 	import Fieldset from '#lib/components/Fieldset.svelte';
 	import Page from '#lib/components/Page.svelte';
 	import PageTitle from '#lib/components/PageTitle.svelte';
@@ -63,8 +64,7 @@
 		data.players
 			.map((player) => {
 				const before =
-					player.score_adjustment +
-					through_round(previous.find((s) => s.player_id === player.id));
+					player.score_adjustment + through_round(previous.find((s) => s.player_id === player.id));
 				const after =
 					player.score_adjustment + through_round(live.find((s) => s.player_id === player.id));
 				return { name: player.name, change: after - before, total: after, before };
@@ -153,6 +153,12 @@
 						{@render checkboxes(form.fields.finalist, data.saved.finalist)}
 					</Fieldset>
 				{/if}
+
+				<Field
+					label="Scoring message"
+					multiline
+					{...form.fields.scoring_message.as('text', data.saved.scoring_message ?? '')}
+				/>
 
 				<Button>Save answers</Button>
 				{#each form.fields.allIssues() ?? [] as issue (issue.message)}

@@ -59,6 +59,9 @@
 <Page>
 	<p><a href="/surveys/{params.token}">← Back to survey</a></p>
 	<PageTitle>{results.player_name}'s results</PageTitle>
+	{#if results.round.scoring_message}
+		<p class="message">{results.round.scoring_message}</p>
+	{/if}
 
 	<SectionHeading>Your score</SectionHeading>
 	{#if results.scored && results.breakdown}
@@ -74,3 +77,9 @@
 	<SectionHeading>Everyone</SectionHeading>
 	<ScoreChart rows={score_chart_rows} />
 </Page>
+
+<style>
+	.message {
+		white-space: pre-line;
+	}
+</style>

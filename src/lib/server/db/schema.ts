@@ -71,6 +71,8 @@ export const round = sqliteTable(
 			.references(() => game.id, { onDelete: 'cascade' }),
 		number: integer('number').notNull(),
 		name: text('name').notNull(),
+		survey_message: text('survey_message'),
+		scoring_message: text('scoring_message'),
 		bonus_question: text('bonus_question'),
 		allow_finale_prediction: integer('allow_finale_prediction', { mode: 'boolean' })
 			.notNull()

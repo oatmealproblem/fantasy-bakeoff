@@ -300,6 +300,10 @@ const timezone_field = z.string().default('UTC');
 
 const round_fields = {
 	name: z.string().trim().min(1, 'Enter a round name'),
+	survey_message: z
+		.string()
+		.trim()
+		.transform((v) => v || null),
 	bonus_question: z
 		.string()
 		.trim()
@@ -313,6 +317,7 @@ const round_fields = {
 
 function round_values(fields: {
 	name: string;
+	survey_message: string | null;
 	bonus_question: string | null;
 	allow_finale_prediction: boolean;
 	is_finale: boolean;
@@ -327,6 +332,7 @@ function round_values(fields: {
 
 	return {
 		name: fields.name,
+		survey_message: fields.survey_message,
 		bonus_question: fields.bonus_question,
 		allow_finale_prediction: fields.allow_finale_prediction,
 		is_finale: fields.is_finale,
@@ -404,18 +410,21 @@ export const release_surveys = form(
 			const deadline = row.response_deadline
 				? ` The deadline is ${format_in_timezone(row.response_deadline, timezone)}.`
 				: '';
+			const survey_message = row.survey_message ? ` ${row.survey_message}` : '';
 
 			await Promise.all(
 				created.map((r) => {
 					const p = players.find((x) => x.id === r.player_id)!;
 					if (!p.email) return;
 					const url = survey_url(r.id);
-					const message = `${p.name}, your survey for ${row.name} is now available.${deadline}`;
+					const message = `${p.name}, your survey for ${row.name} is now available.${deadline}${survey_message}`;
 					return send_email(
 						p.email,
 						`${row.name}: on your marks, get set, vote!`,
 						`${message} Here's your personal survey link: ${url}`,
-						html`<p>${message} <a href="${url}">Here's your personal survey link.</a></p>`
+						html`<p style="white-space: pre-line">
+							${message} <a href="${url}">Here's your personal survey link.</a>
+						</p>`
 					);
 				})
 			);
@@ -510,6 +519,7 @@ export const get_survey = query(z.string(), (token) => {
 		round: {
 			name: round_row.name,
 			number: round_row.number,
+			survey_message: round_row.survey_message,
 			bonus_question: round_row.bonus_question,
 			allow_finale_prediction: round_row.allow_finale_prediction,
 			is_finale: round_row.is_finale,
@@ -591,7 +601,12 @@ export const get_survey_results = query(z.string(), (token) => {
 	return {
 		player_id: player_row.id,
 		player_name: player_row.name,
-		round: { id: round_row.id, number: round_row.number, name: round_row.name },
+		round: {
+			id: round_row.id,
+			number: round_row.number,
+			name: round_row.name,
+			scoring_message: round_row.scoring_message
+		},
 		rounds,
 		contestants: db
 			.select({ id: contestant.id, name: contestant.name })
@@ -761,7 +776,8 @@ export const get_round_scoring = query(
 				technical_challenge_last: pick('technical_challenge_last'),
 				bonus_question_answers: picks('bonus_question_answer'),
 				winner: pick('winner'),
-				finalist: picks('finalist')
+				finalist: picks('finalist'),
+				scoring_message: round_row.scoring_message
 			}
 		};
 	}
@@ -779,7 +795,11 @@ const answer_fields = z.object({
 	technical_challenge_last: z.string().optional(),
 	bonus_question_answers: z.array(z.string()).default([]),
 	winner: z.string().optional(),
-	finalist: z.array(z.string()).default([])
+	finalist: z.array(z.string()).default([]),
+	scoring_message: z
+		.string()
+		.default('')
+		.transform((v) => v.trim() || null)
 });
 
 export const save_round_answers = form(answer_fields, async (data) => {
@@ -798,6 +818,10 @@ export const save_round_answers = form(answer_fields, async (data) => {
 	const first_score = rows.length > 0 && !round_scored(round_row.id);
 
 	db.transaction((tx) => {
+		tx.update(round)
+			.set({ scoring_message: data.scoring_message })
+			.where(eq(round.id, round_row.id))
+			.run();
 		tx.delete(round_contestant).where(eq(round_contestant.round_id, round_row.id)).run();
 		if (rows.length > 0) {
 			tx.insert(round_contestant).values(rows).run();
@@ -820,12 +844,15 @@ export const save_round_answers = form(answer_fields, async (data) => {
 			recipients.map((r) => {
 				if (!r.email) return;
 				const url = results_url(r.token);
-				const message = `${r.name}, ${round_row.name} has been scored.`;
+				const scoring_message = data.scoring_message ? ` ${data.scoring_message}` : '';
+				const message = `${r.name}, ${round_row.name} has been scored.${scoring_message}`;
 				return send_email(
 					r.email,
 					`${round_row.name}: and this week's star voter is...`,
 					`${message} See the results here: ${url}`,
-					html`<p>${message} <a href="${url}">See the results here.</a></p>`
+					html`<p style="white-space: pre-line">
+						${message} <a href="${url}">See the results here.</a>
+					</p>`
 				);
 			})
 		);

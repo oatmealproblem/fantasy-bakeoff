@@ -1,12 +1,26 @@
 <script lang="ts">
-	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { HTMLInputAttributes, HTMLTextareaAttributes } from 'svelte/elements';
 
-	let { label, ...rest }: { label?: string } & HTMLInputAttributes = $props();
+	let {
+		label,
+		multiline = false,
+		wide = false,
+		...rest
+	}: {
+		label?: string;
+		multiline?: boolean;
+		wide?: boolean;
+	} & HTMLInputAttributes &
+		HTMLTextareaAttributes = $props();
 </script>
 
-<label class="field">
+<label class={['field', { wide }]}>
 	{#if label}{label}{/if}
-	<input {...rest} />
+	{#if multiline}
+		<textarea {...rest as HTMLTextareaAttributes}></textarea>
+	{:else}
+		<input {...rest as HTMLInputAttributes} />
+	{/if}
 </label>
 
 <style>
@@ -15,7 +29,12 @@
 		margin-block: var(--field-margin-block, 0.75rem);
 	}
 
-	.field input {
+	.field.wide {
+		grid-column: 1 / -1;
+	}
+
+	.field input,
+	.field textarea {
 		display: block;
 		margin-block-start: 0.25rem;
 		background: var(--surface-alt);
@@ -27,11 +46,18 @@
 		outline: none;
 	}
 
-	.field input::placeholder {
+	.field textarea {
+		min-height: 4rem;
+		resize: vertical;
+	}
+
+	.field input::placeholder,
+	.field textarea::placeholder {
 		color: #667085;
 	}
 
-	.field input:focus {
+	.field input:focus,
+	.field textarea:focus {
 		border-color: var(--primary-dark);
 		box-shadow: 0 0 5px rgba(21, 105, 136, 0.6);
 	}
